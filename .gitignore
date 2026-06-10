@@ -1,19 +1,9 @@
-# Maven build outputs — never commit these
 **/target/
 **/*.jar
 **/*.war
 **/*.class
-
-# IDE
 .idea/
 *.iml
-.vscode/
-
-# OS
 .DS_Store
-
-# Logs
 *.log
-
-# Helm chart dependencies
 charts/
