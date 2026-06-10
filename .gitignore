@@ -1,11 +1,8 @@
-# Maven build outputs
-target/
-*.jar
-*.war
-*.class
-
-# Docker
-.docker/
+# Maven build outputs — never commit these
+**/target/
+**/*.jar
+**/*.war
+**/*.class
 
 # IDE
 .idea/
@@ -18,5 +15,5 @@ target/
 # Logs
 *.log
 
-# Helm dependencies
+# Helm chart dependencies
 charts/
