@@ -1,0 +1,63 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Values.apiGateway.name }}
+  labels:
+    app: {{ .Values.apiGateway.name }}
+spec:
+  replicas: {{ .Values.apiGateway.replicaCount }}
+  selector:
+    matchLabels:
+      app: {{ .Values.apiGateway.name }}
+  template:
+    metadata:
+      labels:
+        app: {{ .Values.apiGateway.name }}
+    spec:
+      containers:
+        - name: {{ .Values.apiGateway.name }}
+          image: {{ .Values.apiGateway.image.repository }}:{{ .Values.apiGateway.image.tag }}
+          imagePullPolicy: {{ .Values.pullPolicy }}
+          ports:
+            - containerPort: {{ .Values.apiGateway.service.targetPort }}
+          envFrom:
+            - configMapRef:
+                name: {{ .Values.configMapName }}
+            - secretRef:
+                name: {{ .Values.secretName }}
+          resources:
+            requests:
+              memory: {{ .Values.resources.requests.memory }}
+              cpu: {{ .Values.resources.requests.cpu }}
+            limits:
+              memory: {{ .Values.resources.limits.memory }}
+              cpu: {{ .Values.resources.limits.cpu }}
+          livenessProbe:
+            httpGet:
+              path: /actuator/health
+              port: {{ .Values.apiGateway.service.targetPort }}
+            initialDelaySeconds: {{ .Values.apiGateway.probes.initialDelaySeconds }}
+            periodSeconds: {{ .Values.apiGateway.probes.periodSeconds }}
+            failureThreshold: {{ .Values.apiGateway.probes.failureThreshold }}
+            timeoutSeconds: {{ .Values.apiGateway.probes.timeoutSeconds }}
+          readinessProbe:
+            httpGet:
+              path: /actuator/health
+              port: {{ .Values.apiGateway.service.targetPort }}
+            initialDelaySeconds: {{ .Values.apiGateway.probes.initialDelaySeconds }}
+            periodSeconds: {{ .Values.apiGateway.probes.periodSeconds }}
+            failureThreshold: {{ .Values.apiGateway.probes.failureThreshold }}
+            timeoutSeconds: {{ .Values.apiGateway.probes.timeoutSeconds }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Values.apiGateway.name }}
+spec:
+  type: {{ .Values.apiGateway.service.type }}
+  selector:
+    app: {{ .Values.apiGateway.name }}
+  ports:
+    - port: {{ .Values.apiGateway.service.port }}
+      targetPort: {{ .Values.apiGateway.service.targetPort }}
+      nodePort: {{ .Values.apiGateway.service.nodePort }}

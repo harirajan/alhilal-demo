@@ -1,0 +1,77 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: api-gateway
+
+  # Redis connection
+  data:
+    redis:
+      host: localhost
+      port: 6379
+
+  cloud:
+    gateway:
+      routes:
+
+        # BFF route WITH rate limiting
+        - id: bff-retail-route
+          uri: http://localhost:8085
+          predicates:
+            - Path=/bff/**
+          filters:
+            - AddRequestHeader=X-Gateway, api-gateway
+            - name: RequestRateLimiter
+              args:
+                # how many requests per second (steady rate)
+                redis-rate-limiter.replenishRate: 5
+                # max burst allowed
+                redis-rate-limiter.burstCapacity: 10
+                # which bean to use as key
+                key-resolver: "#{@ipKeyResolver}"
+
+        # Customer service route WITH rate limiting
+        - id: customer-service-route
+          uri: http://localhost:8082
+          predicates:
+            - Path=/api/v1/customers/**
+          filters:
+            - name: RequestRateLimiter
+              args:
+                redis-rate-limiter.replenishRate: 5
+                redis-rate-limiter.burstCapacity: 10
+                key-resolver: "#{@ipKeyResolver}"
+
+        # Account service route WITH rate limiting
+        - id: account-service-route
+          uri: http://localhost:8083
+          predicates:
+            - Path=/api/v1/accounts/**
+          filters:
+            - name: RequestRateLimiter
+              args:
+                redis-rate-limiter.replenishRate: 5
+                redis-rate-limiter.burstCapacity: 10
+                key-resolver: "#{@ipKeyResolver}"
+
+      globalcors:
+        corsConfigurations:
+          '[/**]':
+            allowedOrigins: "*"
+            allowedMethods: "*"
+            allowedHeaders: "*"
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,gateway
+  endpoint:
+    gateway:
+      enabled: true
+
+logging:
+  level:
+    org.springframework.cloud.gateway: DEBUG
+    com.alhilal: DEBUG

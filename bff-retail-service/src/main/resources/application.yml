@@ -1,0 +1,60 @@
+server:
+  port: 8085   # bff-retail-service always on 8081
+
+spring:
+  application:
+    name: bff-retail-services
+
+  # BFF has NO database — this is the key difference from domain services
+  # No datasource config here at all
+
+  # Feign needs this to show full error messages
+  cloud:
+    openfeign:
+      circuitbreaker:
+        enabled: true  # enables circuit breaker on all Feign clients
+feign:
+  circuitbreaker:
+    enabled: false
+# URLs of downstream domain services
+# In Kubernetes: these would be http://customer-services and http://account-services
+# Locally: explicit ports
+services:
+  customer:
+    url: http://localhost:8082
+  account:
+    url: http://localhost:8083
+
+# Resilience4j circuit breaker config
+resilience4j:
+  circuitbreaker:
+    instances:
+      customer-services:
+        failure-rate-threshold: 50          # open after 50% failures
+        wait-duration-in-open-state: 10s    # wait 10s before retrying
+        sliding-window-size: 5              # evaluate last 5 calls
+        permitted-number-of-calls-in-half-open-state: 2
+      account-services:
+        failure-rate-threshold: 50
+        wait-duration-in-open-state: 10s
+        sliding-window-size: 5
+        permitted-number-of-calls-in-half-open-state: 2
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,circuitbreakers,metrics,prometheus
+  Prometheus:
+    metrics:
+      export:
+        enabled: true
+
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
+
+logging:
+  level:
+    com.alhilal: DEBUG
+    io.github.resilience4j: INFO

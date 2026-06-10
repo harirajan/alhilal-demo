@@ -1,0 +1,62 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Values.bffRetail.name }}
+  labels:
+    app: {{ .Values.bffRetail.name }}
+spec:
+  replicas: {{ .Values.bffRetail.replicaCount }}
+  selector:
+    matchLabels:
+      app: {{ .Values.bffRetail.name }}
+  template:
+    metadata:
+      labels:
+        app: {{ .Values.bffRetail.name }}
+    spec:
+      containers:
+        - name: {{ .Values.bffRetail.name }}
+          image: {{ .Values.bffRetail.image.repository }}:{{ .Values.bffRetail.image.tag }}
+          imagePullPolicy: {{ .Values.pullPolicy }}
+          ports:
+            - containerPort: {{ .Values.bffRetail.service.targetPort }}
+          envFrom:
+            - configMapRef:
+                name: {{ .Values.configMapName }}
+            - secretRef:
+                name: {{ .Values.secretName }}
+          resources:
+            requests:
+              memory: {{ .Values.resources.requests.memory }}
+              cpu: {{ .Values.resources.requests.cpu }}
+            limits:
+              memory: {{ .Values.resources.limits.memory }}
+              cpu: {{ .Values.resources.limits.cpu }}
+          livenessProbe:
+            httpGet:
+              path: /actuator/health
+              port: {{ .Values.bffRetail.service.targetPort }}
+            initialDelaySeconds: {{ .Values.probes.initialDelaySeconds }}
+            periodSeconds: {{ .Values.probes.periodSeconds }}
+            failureThreshold: {{ .Values.probes.failureThreshold }}
+            timeoutSeconds: {{ .Values.probes.timeoutSeconds }}
+          readinessProbe:
+            httpGet:
+              path: /actuator/health
+              port: {{ .Values.bffRetail.service.targetPort }}
+            initialDelaySeconds: {{ .Values.probes.initialDelaySeconds }}
+            periodSeconds: {{ .Values.probes.periodSeconds }}
+            failureThreshold: {{ .Values.probes.failureThreshold }}
+            timeoutSeconds: {{ .Values.probes.timeoutSeconds }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Values.bffRetail.name }}
+spec:
+  type: {{ .Values.bffRetail.service.type }}
+  selector:
+    app: {{ .Values.bffRetail.name }}
+  ports:
+    - port: {{ .Values.bffRetail.service.port }}
+      targetPort: {{ .Values.bffRetail.service.targetPort }}

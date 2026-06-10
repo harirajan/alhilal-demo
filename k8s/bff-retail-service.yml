@@ -1,0 +1,48 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: bff-retail-service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: bff-retail-service
+  template:
+    metadata:
+      labels:
+        app: bff-retail-service
+    spec:
+      containers:
+        - name: bff-retail-service
+          image: alhilal/bff-retail-service:1.0
+          imagePullPolicy: Never
+          ports:
+            - containerPort: 8085
+          envFrom:
+            - configMapRef:
+                name: alhilal-config
+            - secretRef:
+                name: alhilal-secrets
+          livenessProbe:
+            httpGet:
+              path: /actuator/health
+              port: 8085
+            initialDelaySeconds: 60
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /actuator/health
+              port: 8085
+            initialDelaySeconds: 60
+            periodSeconds: 10
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: bff-retail-service
+spec:
+  selector:
+    app: bff-retail-service
+  ports:
+    - port: 8085
+      targetPort: 8085

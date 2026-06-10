@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Values.configMapName }}
+data:
+  SPRING_KAFKA_BOOTSTRAP_SERVERS: "kafka:9092"
+  CUSTOMER_SERVICE_URL: "http://customer-service:8082"
+  ACCOUNT_SERVICE_URL: "http://account-service:8083"
+  BFF_SERVICE_URL: "http://bff-retail-service:8085"
+  SERVICES_CUSTOMER_URL: "http://customer-service:8082"
+  SERVICES_ACCOUNT_URL: "http://account-service:8083"
+  SPRING_DATA_REDIS_HOST: "redis"

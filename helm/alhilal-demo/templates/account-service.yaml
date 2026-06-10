@@ -1,0 +1,62 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Values.accountService.name }}
+  labels:
+    app: {{ .Values.accountService.name }}
+spec:
+  replicas: {{ .Values.accountService.replicaCount }}
+  selector:
+    matchLabels:
+      app: {{ .Values.accountService.name }}
+  template:
+    metadata:
+      labels:
+        app: {{ .Values.accountService.name }}
+    spec:
+      containers:
+        - name: {{ .Values.accountService.name }}
+          image: {{ .Values.accountService.image.repository }}:{{ .Values.accountService.image.tag }}
+          imagePullPolicy: {{ .Values.pullPolicy }}
+          ports:
+            - containerPort: {{ .Values.accountService.service.targetPort }}
+          envFrom:
+            - configMapRef:
+                name: {{ .Values.configMapName }}
+            - secretRef:
+                name: {{ .Values.secretName }}
+          resources:
+            requests:
+              memory: {{ .Values.resources.requests.memory }}
+              cpu: {{ .Values.resources.requests.cpu }}
+            limits:
+              memory: {{ .Values.resources.limits.memory }}
+              cpu: {{ .Values.resources.limits.cpu }}
+          livenessProbe:
+            httpGet:
+              path: /actuator/health
+              port: {{ .Values.accountService.service.targetPort }}
+            initialDelaySeconds: {{ .Values.probes.initialDelaySeconds }}
+            periodSeconds: {{ .Values.probes.periodSeconds }}
+            failureThreshold: {{ .Values.probes.failureThreshold }}
+            timeoutSeconds: {{ .Values.probes.timeoutSeconds }}
+          readinessProbe:
+            httpGet:
+              path: /actuator/health
+              port: {{ .Values.accountService.service.targetPort }}
+            initialDelaySeconds: {{ .Values.probes.initialDelaySeconds }}
+            periodSeconds: {{ .Values.probes.periodSeconds }}
+            failureThreshold: {{ .Values.probes.failureThreshold }}
+            timeoutSeconds: {{ .Values.probes.timeoutSeconds }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Values.accountService.name }}
+spec:
+  type: {{ .Values.accountService.service.type }}
+  selector:
+    app: {{ .Values.accountService.name }}
+  ports:
+    - port: {{ .Values.accountService.service.port }}
+      targetPort: {{ .Values.accountService.service.targetPort }}

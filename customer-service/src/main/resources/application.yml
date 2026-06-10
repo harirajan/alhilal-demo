@@ -1,0 +1,59 @@
+server:
+  port: 8082   # customer-service always on 8082
+
+spring:
+  application:
+    name: customer-services   # matches Al Hilal naming convention
+
+  # Own database — represents customers_db
+  # In production: PostgreSQL. Locally: H2 in-memory
+  datasource:
+    url: jdbc:h2:file:./data/customersdb;DB_CLOSE_DELAY=-1
+    driver-class-name: org.h2.Driver
+    username: sa
+    password:
+
+  h2:
+    console:
+      enabled: true
+      path: /h2-console
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: false
+
+  # Kafka configuration
+  kafka:
+    bootstrap-servers: ${SPRING_KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.apache.kafka.common.serialization.StringSerializer
+      acks: all  # wait for all replicas to confirm (banking reliability)
+
+# Actuator — health check endpoint
+# In Kubernetes: liveness and readiness probes call this
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+  endpoint:
+    health:
+      show-details: always
+  Prometheus:
+    metrics:
+      export:
+        enabled: true
+
+# Swagger
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
+  api-docs:
+    path: /v3/api-docs
+
+logging:
+  level:
+    com.alhilal: DEBUG
+

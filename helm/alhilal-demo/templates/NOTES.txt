@@ -1,0 +1,20 @@
+Al Hilal Banking Demo deployed successfully!
+
+Services running:
+  - api-gateway      (NodePort :30080)
+  - bff-retail-service
+  - customer-service
+  - account-service
+  - kafka
+  - redis
+
+To get the gateway URL:
+  minikube service api-gateway --url
+
+To test login:
+  curl -X POST http://\<gateway-url\>/api/auth/login \
+    -H "Content-Type: application/json" \
+    -d '{"email":"abdullah@test.com","password":"password123"}'
+
+To check all pods:
+  kubectl get pods

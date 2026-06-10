@@ -1,0 +1,28 @@
+# Production — more replicas, same image tag (1.0 exists locally)
+customerService:
+  replicaCount: 3
+  image:
+    tag: "1.0"
+
+accountService:
+  replicaCount: 3
+  image:
+    tag: "1.0"
+
+bffRetail:
+  replicaCount: 5
+  image:
+    tag: "1.0"
+
+apiGateway:
+  replicaCount: 2
+  image:
+    tag: "1.0"
+
+resources:
+  requests:
+    memory: "512Mi"
+    cpu: "250m"
+  limits:
+    memory: "1Gi"
+    cpu: "500m"
