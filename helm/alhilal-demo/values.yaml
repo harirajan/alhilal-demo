@@ -42,7 +42,7 @@ bffRetail:
 # ─────────────────────────────────────────
 customerService:
   name: customer-service
-  replicaCount: 1
+  replicaCount: 2
   image:
     repository: alhilal/customer-service
     tag: "1.0"
