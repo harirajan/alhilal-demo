@@ -1,0 +1,22 @@
+# Maven build outputs
+target/
+*.jar
+*.war
+*.class
+
+# Docker
+.docker/
+
+# IDE
+.idea/
+*.iml
+.vscode/
+
+# OS
+.DS_Store
+
+# Logs
+*.log
+
+# Helm dependencies
+charts/
