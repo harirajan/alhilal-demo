@@ -1,0 +1,108 @@
+# ─────────────────────────────────────────────────────────
+# SIDECAR PATTERN DEMO
+# Shows: main container + sidecar container in same pod
+# Use case: Envoy proxy as sidecar for logging + metrics
+# ─────────────────────────────────────────────────────────
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: customer-service-with-sidecar
+  labels:
+    app: customer-service-with-sidecar
+    pattern: sidecar
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: customer-service-with-sidecar
+  template:
+    metadata:
+      labels:
+        app: customer-service-with-sidecar
+      annotations:
+        # Tells Istio to inject Envoy sidecar automatically
+        sidecar.istio.io/inject: "true"
+    spec:
+      containers:
+
+        # ── MAIN CONTAINER: business logic only ──────────
+        - name: customer-service
+          image: alhilal/customer-service:1.0
+          imagePullPolicy: Never
+          ports:
+            - containerPort: 8082
+          envFrom:
+            - configMapRef:
+                name: alhilal-config
+            - secretRef:
+                name: alhilal-secrets
+          resources:
+            requests:
+              memory: "256Mi"
+              cpu: "100m"
+            limits:
+              memory: "512Mi"
+              cpu: "300m"
+          livenessProbe:
+            httpGet:
+              path: /actuator/health
+              port: 8082
+            initialDelaySeconds: 60
+            periodSeconds: 10
+
+        # ── SIDECAR CONTAINER: cross-cutting concerns ─────
+        # In production this would be Envoy proxy
+        # Here we use nginx as a simple sidecar demo
+        - name: envoy-sidecar
+          image: nginx:alpine
+          ports:
+            - containerPort: 9901  # Envoy admin port
+          resources:
+            requests:
+              memory: "64Mi"
+              cpu: "50m"
+            limits:
+              memory: "128Mi"
+              cpu: "100m"
+          # Sidecar handles:
+          #   - request/response logging
+          #   - metrics collection (Prometheus)
+          #   - mTLS encryption
+          #   - circuit breaking
+          #   - distributed tracing (Jaeger)
+          # Main service code UNCHANGED ✓
+
+---
+# ─────────────────────────────────────────────────────────
+# WHAT SIDECAR PROVIDES WITHOUT CODE CHANGES:
+#
+# 1. Logging:
+#    All requests/responses logged by Envoy
+#    customer-service doesn't need logging code
+#
+# 2. Metrics:
+#    Prometheus scrapes Envoy for metrics
+#    customer-service doesn't need Micrometer
+#
+# 3. mTLS:
+#    Envoy encrypts all traffic automatically
+#    customer-service uses plain HTTP internally
+#
+# 4. Circuit Breaker:
+#    Envoy handles retries and timeouts
+#    customer-service doesn't need Resilience4j
+#
+# 5. Distributed Tracing:
+#    Envoy adds trace headers automatically
+#    customer-service doesn't need Sleuth/Zipkin
+# ─────────────────────────────────────────────────────────
+apiVersion: v1
+kind: Service
+metadata:
+  name: customer-service-with-sidecar
+spec:
+  selector:
+    app: customer-service-with-sidecar
+  ports:
+    - port: 8082
+      targetPort: 8082

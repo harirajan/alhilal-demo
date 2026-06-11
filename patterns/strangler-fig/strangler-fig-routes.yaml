@@ -1,0 +1,98 @@
+# ─────────────────────────────────────────────────────────
+# STRANGLER FIG PATTERN DEMO
+# Shows: gradual migration from monolith to microservices
+# Tool: Spring Cloud Gateway routing config
+# ─────────────────────────────────────────────────────────
+
+# Phase 1: Everything goes to monolith
+# ─────────────────────────────────────
+# spring:
+#   cloud:
+#     gateway:
+#       routes:
+#         - id: monolith-all
+#           uri: http://legacy-monolith:8080
+#           predicates:
+#             - Path=/**
+
+# Phase 2: Customer APIs migrated to new microservice
+# ─────────────────────────────────────────────────────────
+# spring:
+#   cloud:
+#     gateway:
+#       routes:
+#         - id: new-customer-service
+#           uri: http://customer-service:8082
+#           predicates:
+#             - Path=/api/customers/**
+#           filters:
+#             - StripPrefix=0
+#
+#         - id: monolith-rest
+#           uri: http://legacy-monolith:8080
+#           predicates:
+#             - Path=/**         # everything else → monolith
+
+# Phase 3: Payment APIs migrated (canary release)
+# ─────────────────────────────────────────────────────────
+# spring:
+#   cloud:
+#     gateway:
+#       routes:
+#         - id: new-customer-service
+#           uri: http://customer-service:8082
+#           predicates:
+#             - Path=/api/customers/**
+#
+#         - id: new-payment-service-canary
+#           uri: http://payment-service:8091
+#           predicates:
+#             - Path=/api/payments/**
+#             - Weight=payment-group, 10    # 10% to new service
+#
+#         - id: monolith-payment-legacy
+#           uri: http://legacy-monolith:8080
+#           predicates:
+#             - Path=/api/payments/**
+#             - Weight=payment-group, 90    # 90% still to monolith
+#
+#         - id: monolith-rest
+#           uri: http://legacy-monolith:8080
+#           predicates:
+#             - Path=/**
+
+# Phase 4: Full migration (monolith decommissioned)
+# ─────────────────────────────────────────────────────────
+spring:
+  cloud:
+    gateway:
+      routes:
+        # ── NEW MICROSERVICES ─────────────────────────────
+        - id: customer-service
+          uri: http://customer-service:8082
+          predicates:
+            - Path=/api/customers/**,/api/auth/**
+          filters:
+            - name: CircuitBreaker
+              args:
+                name: customerCircuitBreaker
+                fallbackUri: forward:/fallback
+
+        - id: account-service
+          uri: http://account-service:8083
+          predicates:
+            - Path=/api/accounts/**
+          filters:
+            - name: CircuitBreaker
+              args:
+                name: accountCircuitBreaker
+                fallbackUri: forward:/fallback
+
+        - id: bff-service
+          uri: http://bff-retail-service:8085
+          predicates:
+            - Path=/bff/**
+
+        # ── LEGACY ROUTES (being decommissioned) ─────────
+        # All traffic now on microservices
+        # Monolith shutdown complete ✓

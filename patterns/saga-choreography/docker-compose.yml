@@ -1,0 +1,53 @@
+version: '3.8'
+
+services:
+  # ─── Kafka KRaft (NO Zookeeper needed) ───
+  kafka:
+    image: apache/kafka:3.7.0
+    container_name: saga-kafka
+    ports:
+      - "9093:9092"    # use 9093 to avoid conflict with main kafka
+    environment:
+      KAFKA_NODE_ID: 1
+      KAFKA_PROCESS_ROLES: "broker,controller"
+      KAFKA_LISTENERS: "PLAINTEXT://:9092,CONTROLLER://:9093"
+      KAFKA_ADVERTISED_LISTENERS: "PLAINTEXT://localhost:9093"
+      KAFKA_CONTROLLER_LISTENER_NAMES: "CONTROLLER"
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: "CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT"
+      KAFKA_CONTROLLER_QUORUM_VOTERS: "1@localhost:9093"
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
+      KAFKA_HEAP_OPTS: "-Xmx256M -Xms128M"
+
+  # ─── Saga Payment Service ───
+  saga-payment:
+    build: ./payment-service
+    container_name: saga-payment-service
+    ports:
+      - "8091:8091"
+    environment:
+      KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+    depends_on:
+      - kafka
+
+  # ─── Saga Account Service ───
+  saga-account:
+    build: ./account-service
+    container_name: saga-account-service
+    ports:
+      - "8092:8092"
+    environment:
+      KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+    depends_on:
+      - kafka
+
+  # ─── Saga Notification Service ───
+  saga-notification:
+    build: ./notification-service
+    container_name: saga-notification-service
+    ports:
+      - "8093:8093"
+    environment:
+      KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+    depends_on:
+      - kafka
